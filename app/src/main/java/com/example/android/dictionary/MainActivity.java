@@ -1,6 +1,8 @@
 package com.example.android.dictionary;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
 import android.os.Bundle;
 import androidx.appcompat.widget.Toolbar;
 import android.view.Menu;
@@ -23,6 +25,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 searchView.setIconified(false);
+                Intent intent = new Intent(MainActivity.this, WordMeaning.class);
+                startActivity(intent);
             }
         });
     }
