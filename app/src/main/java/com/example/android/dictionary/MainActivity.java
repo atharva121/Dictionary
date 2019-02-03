@@ -3,6 +3,7 @@ package com.example.android.dictionary;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.database.SQLException;
 import android.os.Bundle;
 import androidx.appcompat.widget.Toolbar;
@@ -11,13 +12,16 @@ import android.os.IInterface;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CursorAdapter;
 import android.widget.SearchView;
+import android.widget.SimpleCursorAdapter;
 
 public class MainActivity extends AppCompatActivity {
 
     SearchView searchView;
     static DatabaseHelper myDbHelper;
     static boolean databaseOpened = false;
+    SimpleCursorAdapter suggestionAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +44,39 @@ public class MainActivity extends AppCompatActivity {
             LoadDatabaseAsync task = new LoadDatabaseAsync(MainActivity.this);
             task.execute();
         }
+        final String[] from = new String[]{"en_word"};
+        final int[] to = new int[]{R.id.suggestion_text};
+        suggestionAdapter = new SimpleCursorAdapter(MainActivity.this,
+                R.layout.suggestion_row, null, from, to, 0){
+            @Override
+            public void changeCursor(Cursor cursor) {
+                super.changeCursor(cursor);
+            }
+        };
+        searchView.setSuggestionsAdapter(suggestionAdapter);
+        searchView.setOnSuggestionListener(new SearchView.OnSuggestionListener() {
+            @Override
+            public boolean onSuggestionSelect(int position) {
+                CursorAdapter ca = searchView.getSuggestionsAdapter();
+                Cursor cursor = ca.getCursor();
+                cursor.moveToPosition(position);
+                String clicked_word = cursor.getString(cursor.getColumnIndex("en_word"));
+                searchView.setQuery(clicked_word, false);
+                searchView.clearFocus();
+                searchView.setFocusable(false);
+                Intent intent = new Intent(MainActivity.this, WordMeaning.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("en_word", clicked_word);
+                intent.putExtras(bundle);
+                startActivity(intent);
+                return false;
+            }
+
+            @Override
+            public boolean onSuggestionClick(int position) {
+                return false;
+            }
+        });
     }
 
     protected static void openDataBase() {
