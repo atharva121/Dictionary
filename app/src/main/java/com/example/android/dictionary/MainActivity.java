@@ -3,6 +3,7 @@ package com.example.android.dictionary;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.database.SQLException;
 import android.os.Bundle;
 import androidx.appcompat.widget.Toolbar;
 
@@ -15,6 +16,8 @@ import android.widget.SearchView;
 public class MainActivity extends AppCompatActivity {
 
     SearchView searchView;
+    static DatabaseHelper myDbHelper;
+    static boolean databaseOpened = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,10 +30,26 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 searchView.setIconified(false);
-                Intent intent = new Intent(MainActivity.this, WordMeaning.class);
-                startActivity(intent);
             }
         });
+        myDbHelper = new DatabaseHelper(this);
+        if (myDbHelper.checkDataBase()){
+            openDataBase();
+        }
+        else {
+            LoadDatabaseAsync task = new LoadDatabaseAsync(MainActivity.this);
+            task.execute();
+        }
+    }
+
+    protected static void openDataBase() {
+        try {
+            myDbHelper.openDataBase();
+            databaseOpened = true;
+        }
+        catch (SQLException e){
+            e.printStackTrace();
+        }
     }
 
     @Override
