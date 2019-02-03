@@ -1,8 +1,10 @@
 package com.example.android.dictionary;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
@@ -12,87 +14,111 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
+
     private String DB_PATH = null;
     private static String DB_NAME = "eng_dictionary.db";
     private SQLiteDatabase myDataBase;
-    private final Context mContext;
-    public DatabaseHelper(Context context){
+    private final Context myContext;
+
+    public DatabaseHelper(Context context) {
         super(context, DB_NAME, null, 1);
-        this.mContext = context;
+        this.myContext = context;
         this.DB_PATH = "/data/data/" + context.getPackageName() + "/" + "databases/";
-        Log.e("Path 1", DB_PATH );
+        Log.e("Path 1", DB_PATH);
+
     }
 
-    public void createDataBase()throws IOException{
-        boolean dbExists = checkDataBase();
-        if (!dbExists){
+    public void createDataBase() throws IOException {
+        boolean dbExist = checkDataBase();
+        if (!dbExist) {
+
             this.getReadableDatabase();
             try {
-                copyDatabase();
+                myContext.deleteDatabase(DB_NAME);
+                copyDataBase();
+
+            } catch (IOException e) {
+                throw new Error("Error copying database");
             }
-            catch (IOException e){
-                throw new Error("Error copying database!");
-            }
+
         }
+
     }
 
-    public boolean checkDataBase(){
+    public boolean checkDataBase() {
         SQLiteDatabase checkDB = null;
         try {
             String myPath = DB_PATH + DB_NAME;
             checkDB = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READONLY);
-        }
-        catch (SQLException e){
 
+        } catch (SQLiteException e) {
+            //
         }
-        if (checkDB != null){
+        if (checkDB != null) {
             checkDB.close();
         }
+
         return checkDB != null ? true : false;
     }
 
-    private void copyDatabase() throws IOException{
-        InputStream myInput = mContext.getAssets().open(DB_NAME);
+
+    private void copyDataBase() throws IOException {
+
+        InputStream myInput = myContext.getAssets().open(DB_NAME);
         String outFileName = DB_PATH + DB_NAME;
         OutputStream myOutput = new FileOutputStream(outFileName);
         byte[] buffer = new byte[1024];
         int length;
-        while ((length = myInput.read()) > 0){
+        while ((length = myInput.read(buffer)) > 0) {
             myOutput.write(buffer, 0, length);
         }
         myOutput.flush();
         myOutput.close();
         myInput.close();
-        Log.e("copyDatabase", "Database copied!");
+        Log.i("copyDataBase", "Database copied");
+
+
     }
 
-    public void openDataBase() throws SQLException{
+    public void openDataBase() throws SQLException {
         String myPath = DB_PATH + DB_NAME;
         myDataBase = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READWRITE);
+
     }
+
 
     @Override
     public synchronized void close() {
-        if (myDataBase != null){
+        if (myDataBase != null)
             myDataBase.close();
-        }
         super.close();
     }
 
+
     @Override
-    public void onCreate(SQLiteDatabase db) {
+    public void onCreate(SQLiteDatabase sqLiteDatabase) {
 
     }
 
     @Override
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+    public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
         try {
             this.getReadableDatabase();
-            mContext.deleteDatabase(DB_NAME);
-            copyDatabase();
-        }
-        catch (IOException e){
+            myContext.deleteDatabase(DB_NAME);
+            copyDataBase();
+        } catch (IOException e) {
             e.printStackTrace();
+
         }
+    }
+
+    public Cursor getMeaning(String text) {
+        Cursor c = myDataBase.rawQuery("SELECT en_definition,example,synonyms,antonyms FROM words WHERE en_word==UPPER('" + text + "')", null);
+        return c;
+    }
+
+    public Cursor getSuggestions(String text) {
+        Cursor c = myDataBase.rawQuery("SELECT _id, en_word FROM words WHERE en_word LIKE '" + text + "%' LIMIT 40", null);
+        return c;
     }
 }

@@ -1,7 +1,9 @@
 package com.example.android.dictionary;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.SQLException;
@@ -74,6 +76,56 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public boolean onSuggestionClick(int position) {
+                return false;
+            }
+        });
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                String text = searchView.getQuery().toString();
+                Cursor c = myDbHelper.getMeaning(text);
+                if (c.getCount() == 0){
+                    searchView.setQuery("", false);
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this, R.style.MyDialogTheme);
+                    builder.setTitle("Word not found!");
+                    builder.setMessage("Please search again!");
+                    String positiveText = getString(android.R.string.ok);
+                    builder.setPositiveButton(positiveText,
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                }
+                            });
+                    String negativeText = getString(android.R.string.cancel);
+                    builder.setNegativeButton(negativeText,
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    searchView.clearFocus();
+                                }
+                            });
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
+                }
+                else {
+                    searchView.clearFocus();
+                    searchView.setFocusable(false);
+                    Intent intent = new Intent(MainActivity.this, WordMeaning.class);
+                    Bundle bundle = new Bundle();
+                    bundle.putString("en_word", text);
+                    intent.putExtras(bundle);
+                    startActivity(intent);
+                }
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                searchView.setIconifiedByDefault(false);
+                Cursor cursorSuggestion = myDbHelper.getSuggestions(newText);
+                suggestionAdapter.changeCursor(cursorSuggestion);
                 return false;
             }
         });
