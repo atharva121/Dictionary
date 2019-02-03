@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
                 R.layout.suggestion_row, null, from, to, 0){
             @Override
             public void changeCursor(Cursor cursor) {
-                super.changeCursor(cursor);
+                super.swapCursor(cursor);
             }
         };
         searchView.setSuggestionsAdapter(suggestionAdapter);
@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
                 bundle.putString("en_word", clicked_word);
                 intent.putExtras(bundle);
                 startActivity(intent);
-                return false;
+                return true;
             }
 
             @Override

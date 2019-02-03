@@ -121,4 +121,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor c = myDataBase.rawQuery("SELECT _id, en_word FROM words WHERE en_word LIKE '" + text + "%' LIMIT 40", null);
         return c;
     }
+
+    public void insertHistory(String text){
+        myDataBase.execSQL("INSERT INTO history(word) VALUES(UPPER('"+text+"'))");
+    }
 }

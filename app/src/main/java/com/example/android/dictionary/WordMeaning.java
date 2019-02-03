@@ -7,8 +7,14 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
+import android.database.Cursor;
+import android.database.SQLException;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
+import android.util.Log;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageButton;
 
 import com.example.android.dictionary.fragments.FragmentAntonyms;
 import com.example.android.dictionary.fragments.FragmentDefinition;
@@ -16,20 +22,71 @@ import com.example.android.dictionary.fragments.FragmentExample;
 import com.example.android.dictionary.fragments.FragmentSynonyms;
 import com.google.android.material.tabs.TabLayout;
 
+import org.w3c.dom.Text;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class WordMeaning extends AppCompatActivity {
 
     private ViewPager viewPager;
+    String enWord;
+    DatabaseHelper myDbHelper;
+    Cursor c = null;
+    public String enDefinition;
+    public String example;
+    public String synonyms;
+    public String antonyms;
+    TextToSpeech tts;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_word_meaning);
+        Bundle bundle = getIntent().getExtras();
+        enWord = bundle.getString("en_word");
+        myDbHelper = new DatabaseHelper(this);
+        try{
+            myDbHelper.openDataBase();
+        }
+        catch (SQLException e){
+            throw e;
+        }
+        c = myDbHelper.getMeaning(enWord);
+        if (c.moveToFirst()){
+            enDefinition = c.getString(c.getColumnIndex("en_definition"));
+            example = c.getString(c.getColumnIndex("example"));
+            synonyms = c.getString(c.getColumnIndex("synonyms"));
+            antonyms = c.getString(c.getColumnIndex("antonyms"));
+        }
+        myDbHelper.insertHistory(enWord);
+        ImageButton btnSpeak = findViewById(R.id.btnSpeak);
+        btnSpeak.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                tts = new TextToSpeech(WordMeaning.this, new TextToSpeech.OnInitListener() {
+                    @Override
+                    public void onInit(int status) {
+                        if (status == TextToSpeech.SUCCESS){
+                            int result = tts.setLanguage(Locale.getDefault());
+                            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED){
+                                Log.e("error", "This language is not supported!" );
+                            }
+                            else {
+                                tts.speak(enWord, TextToSpeech.QUEUE_FLUSH, null);
+                            }
+                        }
+                        else {
+                            Log.e("error", "Initialization failed!" );
+                        }
+                    }
+                });
+            }
+        });
         Toolbar toolbar = findViewById(R.id.mToolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setTitle("English words");
+        getSupportActionBar().setTitle(enWord);
         toolbar.setNavigationIcon(R.drawable.ic_arrow_back_black_24dp);
         viewPager = findViewById(R.id.tab_viewpager);
         if (viewPager != null){
