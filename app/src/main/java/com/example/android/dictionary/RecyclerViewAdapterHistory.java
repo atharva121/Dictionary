@@ -52,7 +52,7 @@ public class RecyclerViewAdapterHistory extends RecyclerView.Adapter<RecyclerVie
     }
 
     @Override
-    public void onBindViewHolder(@NonNull HistoryViewHolder holder, int position, @NonNull List<Object> payloads) {
+    public void onBindViewHolder(@NonNull HistoryViewHolder holder, int position) {
         holder.enWord.setText(histories.get(position).get_en_word());
     }
 

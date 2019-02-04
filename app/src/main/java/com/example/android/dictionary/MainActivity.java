@@ -9,14 +9,19 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.os.Bundle;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.IInterface;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CursorAdapter;
+import android.widget.RelativeLayout;
 import android.widget.SearchView;
 import android.widget.SimpleCursorAdapter;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,6 +29,12 @@ public class MainActivity extends AppCompatActivity {
     static DatabaseHelper myDbHelper;
     static boolean databaseOpened = false;
     SimpleCursorAdapter suggestionAdapter;
+    ArrayList<History> historyList;
+    RecyclerView recyclerView;
+    RecyclerView.Adapter historyAdapter;
+    RecyclerView.LayoutManager layoutManager;
+    RelativeLayout emptyHistory;
+    Cursor cursorHistory;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public boolean onSuggestionClick(int position) {
-                return false;
+                return true;
             }
         });
 
@@ -129,6 +140,36 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+
+        emptyHistory = findViewById(R.id.empty_history);
+        recyclerView = findViewById(R.id.recycler_view_history);
+        layoutManager = new LinearLayoutManager(MainActivity.this);
+        recyclerView.setLayoutManager(layoutManager);
+        fetch_history();
+    }
+
+    private void fetch_history() {
+        historyList = new ArrayList<>();
+        historyAdapter = new RecyclerViewAdapterHistory(historyList, this);
+        recyclerView.setAdapter(historyAdapter);
+        History h;
+        if (databaseOpened){
+            cursorHistory = myDbHelper.getHistory();
+            if (cursorHistory.moveToFirst()){
+                do {
+                    h = new History(cursorHistory.getString(cursorHistory.getColumnIndex("word")));
+                    historyList.add(h);
+                }
+                while (cursorHistory.moveToNext());
+            }
+            historyAdapter.notifyDataSetChanged();
+            if (historyAdapter.getItemCount() == 0){
+                emptyHistory.setVisibility(View.VISIBLE);
+            }
+            else {
+                emptyHistory.setVisibility(View.GONE);
+            }
+        }
     }
 
     protected static void openDataBase() {
@@ -162,5 +203,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        fetch_history();
     }
 }
