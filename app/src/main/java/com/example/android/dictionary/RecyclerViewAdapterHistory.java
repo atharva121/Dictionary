@@ -26,9 +26,11 @@ public class RecyclerViewAdapterHistory extends RecyclerView.Adapter<RecyclerVie
 
     public class HistoryViewHolder extends RecyclerView.ViewHolder {
         TextView enWord;
+        TextView enDef;
         public HistoryViewHolder(@NonNull View itemView) {
             super(itemView);
             enWord = itemView.findViewById(R.id.en_word);
+            enDef = itemView.findViewById(R.id.en_def);
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -52,8 +54,9 @@ public class RecyclerViewAdapterHistory extends RecyclerView.Adapter<RecyclerVie
     }
 
     @Override
-    public void onBindViewHolder(@NonNull HistoryViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull HistoryViewHolder holder, final int position) {
         holder.enWord.setText(histories.get(position).get_en_word());
+        holder.enDef.setText(histories.get(position).get_def());
     }
 
     @Override
