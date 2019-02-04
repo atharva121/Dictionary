@@ -7,6 +7,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.os.Bundle;
@@ -27,6 +28,8 @@ import org.w3c.dom.Text;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class WordMeaning extends AppCompatActivity {
 
@@ -39,6 +42,7 @@ public class WordMeaning extends AppCompatActivity {
     public String synonyms;
     public String antonyms;
     TextToSpeech tts;
+    boolean startedFromShare = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +50,25 @@ public class WordMeaning extends AppCompatActivity {
         setContentView(R.layout.activity_word_meaning);
         Bundle bundle = getIntent().getExtras();
         enWord = bundle.getString("en_word");
+        Intent intent = getIntent();
+        String action = intent.getAction();
+        String type = intent.getType();
+        if (Intent.ACTION_SEND.equals(action) && type != null){
+            if ("text/plain".equals(type)){
+                String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
+                startedFromShare = true;
+                if (sharedText != null){
+                    Pattern p = Pattern.compile("[A-Za-z \\-.]{1,25}");
+                    Matcher m = p.matcher(sharedText);
+                    if (m.matches()){
+                        enWord = sharedText;
+                    }
+                    else {
+                        enWord = "Not available!";
+                    }
+                }
+            }
+        }
         myDbHelper = new DatabaseHelper(this);
         try{
             myDbHelper.openDataBase();
@@ -59,8 +82,11 @@ public class WordMeaning extends AppCompatActivity {
             example = c.getString(c.getColumnIndex("example"));
             synonyms = c.getString(c.getColumnIndex("synonyms"));
             antonyms = c.getString(c.getColumnIndex("antonyms"));
+            myDbHelper.insertHistory(enWord);
         }
-        myDbHelper.insertHistory(enWord);
+        else {
+            enWord = "Not available";
+        }
         ImageButton btnSpeak = findViewById(R.id.btnSpeak);
         btnSpeak.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -153,7 +179,14 @@ public class WordMeaning extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home){
-            onBackPressed();
+            if (startedFromShare){
+                Intent intent = new Intent(this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+            }
+            else {
+                onBackPressed();
+            }
         }
         return super.onOptionsItemSelected(item);
     }
